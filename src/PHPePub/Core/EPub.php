@@ -135,6 +135,7 @@ class EPub {
     private $EPubMark = true;
     private $generator = '';
     private $log = null;
+    private $openAtFirstChapter = true;
     private $htmlContentHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n    \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n<title></title>\n</head>\n<body>\n";
     private $htmlContentFooter = "</body>\n</html>\n";
 
@@ -284,10 +285,7 @@ class EPub {
             $partCount = 0;
             $this->chapterCount++;
 
-            $oneChapter = each($chapter);
-            while ($oneChapter) {
-                /** @noinspection PhpUnusedLocalVariableInspection */
-                list($k, $v) = $oneChapter;
+            foreach ($chapter as $k => $v) {
                 if ($this->encodeHTML === true) {
                     $v = StringHelper::encodeHtml($v);
                 }
@@ -301,8 +299,6 @@ class EPub {
                 $this->extractIdAttributes($partName, $v);
 
                 $this->opf->addItemRef($partName);
-
-                $oneChapter = each($chapter);
             }
             $partName = $name . "_1." . $extension;
             $navPoint = new NavPoint(StringHelper::decodeHtmlEntities($chapterName), $partName, $partName);
@@ -1297,7 +1293,7 @@ class EPub {
 
         $this->addCSSFile("Styles/CoverPage.css", "CoverPageCss", $coverPageCss);
         $this->addFile($imgPath, "CoverImage", $imageData, $mimetype);
-        $this->addReferencePage("CoverPage", "CoverPage.xhtml", $coverPage, "cover");
+        $this->addReferencePage("CoverPage", "CoverPage.xhtml", $coverPage, Reference::COVER);
         $this->isCoverImageSet = true;
 
         return true;
@@ -1974,7 +1970,22 @@ class EPub {
         return false;
     }
 
-    /**
+  private function legacy_each($array){
+    $key = key($array);
+    $value = current($array);
+    $each = is_null($key) ? false : [
+      1        => $value,
+      'value'    => $value,
+      0        => $key,
+      'key'    => $key,
+    ];
+    next($array);
+    return $each;
+  }
+
+
+
+  /**
      * Check for mandatory parameters and finalize the e-book.
      * Once finalized, the book is locked for further additions.
      *
@@ -2057,11 +2068,12 @@ class EPub {
             $this->opf->addMeta("generator", "EPub (Version " . self::VERSION . ") by A. Grandt, http://www.phpclasses.org/package/6115 or https://github.com/Grandt/PHPePub/");
         }
 
-        reset($this->ncx->chapterList);
-        list($firstChapterName, $firstChapterNavPoint) = each($this->ncx->chapterList);
-        /** @var $firstChapterNavPoint NavPoint */
-        $firstChapterFileName = $firstChapterNavPoint->getContentSrc();
-        $this->opf->addReference(Reference::TEXT, StringHelper::decodeHtmlEntities($firstChapterName), $firstChapterFileName);
+        if ($this->openAtFirstChapter) {
+          list($firstChapterName, $firstChapterNavPoint) = $this->legacy_each($this->ncx->chapterList);
+          /** @var $firstChapterNavPoint NavPoint */
+          $firstChapterFileName = $firstChapterNavPoint->getContentSrc();
+          $this->opf->addReference(Reference::TEXT, StringHelper::decodeHtmlEntities($firstChapterName), $firstChapterFileName);
+        }
 
         $this->ncx->setUid($this->identifier);
 
@@ -2100,7 +2112,8 @@ class EPub {
 
         return true;
     }
-    
+
+
     /**
      * Finalize and build final ePub structures.
      *
@@ -2156,9 +2169,9 @@ class EPub {
         }
         $tocData .= ">\n";
 
-        while (list($item, $descriptive) = each($this->referencesOrder)) {
+        foreach ($this->referencesOrder as $item => $descriptive) {
             if ($item === "text") {
-                while (list($chapterName, $navPoint) = each($this->ncx->chapterList)) {
+                foreach ($this->ncx->chapterList as $chapterName => $navPoint) {
                     /** @var $navPoint NavPoint */
                     $fileName = $navPoint->getContentSrc();
                     $level = $navPoint->getLevel() - 2;
@@ -2226,7 +2239,7 @@ class EPub {
 
         return $this->ncx->finalizeEPub3($title, $cssFileName);
     }
-    
+
     /**
      * Return the finalized book.
      *
@@ -2279,7 +2292,7 @@ class EPub {
 
         return false;
     }
-    
+
     /**
      * Retrieve an array of file names currently added to the book.
      * $key is the filename used in the book
@@ -2314,7 +2327,7 @@ class EPub {
     function getSplitSize() {
         return $this->splitDefaultSize;
     }
-    
+
     /**
      * @return string
      */
@@ -2368,7 +2381,27 @@ class EPub {
         $this->dangermode = $dangermode === true;
     }
 
+
     /**
+     * Set whether the ebook opens by default at the first non-reference page.
+     *
+     * False will open the book at page number one (which will usually be the cover image).
+     *
+     * @param bool $openAtFirstChapter
+     *
+     * @return bool true if the value was updated
+     */
+    public function setOpenAtFirstChapter($openAtFirstChapter = true) {
+        if ($this->isFinalized) {
+            return false;
+        }
+        $this->openAtFirstChapter = $openAtFirstChapter === true;
+
+        return true;
+    }
+
+
+  /**
      * The Opf data isn't generated before the ePub is finalized.
      *
      * @return null|Opf the Opf structure class.
