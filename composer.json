@@ -5,7 +5,7 @@
     "keywords": ["epub", "e-book"],
     "homepage": "https://github.com/schwartzmedia/PHPePub",
     "license": "LGPL-2.1",
-    "version": "4.1.1",
+    "version": "4.1.2",
     "minimum-stability": "stable",
     "authors": [
         {
@@ -24,7 +24,7 @@
     "require": {
         "php": ">=5.3.0",
         "schwartzmedia/phpzip": "2.1.0",
-        "grandt/phpresizegif": "~1.0.3",
+	"schwartzmedia/phpresizegif": "1.1.0",
         "grandt/relativepath": "~1.0.1"
     },
     "autoload": {
