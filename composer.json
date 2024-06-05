@@ -3,20 +3,27 @@
     "type": "library",
     "description": "Package to create and stream e-books in the ePub 2.0 and 3.0 formats.",
     "keywords": ["epub", "e-book"],
-    "homepage": "https://github.com/schwartzmedia/PHPZip",
+    "homepage": "https://github.com/schwartzmedia/PHPePub",
     "license": "LGPL-2.1",
+    "version": "4.1.1",
     "minimum-stability": "stable",
     "authors": [
         {
-            "name": "Schwartz Media",
-            "email": "developer@schwartzmedia.com.au",
+            "name": "A. Grandt",
+            "email": "php@grandt.com",
+            "homepage": "http://grandt.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Patrick B",
+            "email": "patrickb@schwartzmedia.com.au",
             "homepage": "https://schwartzmedia.com.au",
             "role": "Developer"
         }
     ],
     "require": {
         "php": ">=5.3.0",
-        "phpzip/phpzip": "~2.0.7",
+        "schwartzmedia/phpzip": "2.1.0",
         "grandt/phpresizegif": "~1.0.3",
         "grandt/relativepath": "~1.0.1"
     },
